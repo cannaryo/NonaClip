@@ -78,14 +78,24 @@ namespace NonaClip
         public void push_text(string str)
         {
             int i = find_next(0);
-            string buf = str;
-            while(i != -1)
+            if (i == -1)
+                return;
+            string buf = buffers[i];
+            string cap_buf = captions[i];
+            string cap_str;
+            set_text(str, i);
+            i = find_next(i + 1);
+            while (i != -1)
             {
-                buf = buffers[i];
-                set_text(str, i);
                 str = buf;
+                buf = buffers[i];
+                buffers[i] = str;
+                cap_str = cap_buf;
+                cap_buf = captions[i];
+                captions[i] = cap_str;
                 i = find_next(i+1);
             }
+            return;
         }
 
         private int find_next(int n)

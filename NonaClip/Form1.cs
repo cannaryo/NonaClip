@@ -37,7 +37,8 @@ namespace NonaClip
         const int WM_HOTKEY = 0x0312;
         const int WM_COPY = 0x0301;
         const int WM_PASTE = 0x0302;
-        const int WM_DRAWCLIPBOARD = 0x0308;
+        const int WM_CLIPBOARDUPDATE = 0x031D;
+//        const int WM_DRAWCLIPBOARD = 0x0308;
         const int WM_SETTEXT = 0x000c;
         const int KEYEVENTF_KEYDOWN = 0x0; 
         const int KEYEVENTF_KEYUP = 0x2;
@@ -50,21 +51,25 @@ namespace NonaClip
         const int INPUT_HARDWARE = 2;
 
         [DllImport("user32.dll")]
-        extern static int RegisterHotKey(IntPtr HWnd, int ID, int MOD_KEY, int KEY);
+        private static extern int RegisterHotKey(IntPtr HWnd, int ID, int MOD_KEY, int KEY);
         [DllImport("user32.dll")]
-        extern static int UnregisterHotKey(IntPtr HWnd, int ID);
+        private static extern int UnregisterHotKey(IntPtr HWnd, int ID);
         [DllImport("user32.dll", SetLastError = true)]
-        extern static int SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
+        private static extern int SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
         [DllImport("user32.dll")]
-        extern static IntPtr GetForegroundWindow();
+        private static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")]
-        extern static int SetForegroundWindow(IntPtr hWnd);
+        private static extern int SetForegroundWindow(IntPtr hWnd);
         [DllImport("user32.dll")]
-        extern static IntPtr GetWindow(IntPtr HWnd, uint uCmd);
+        private static extern IntPtr GetWindow(IntPtr HWnd, uint uCmd);
         [DllImport("user32.dll")]
-        extern static uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr ProcessId);
         [DllImport("user32.dll", SetLastError = true)]
-        extern static bool GetGUIThreadInfo(uint idThread, ref GuiThreadInfo lpgui);
+        private static extern bool GetGUIThreadInfo(uint idThread, ref GuiThreadInfo lpgui);
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool AddClipboardFormatListener(IntPtr hwnd);
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern void RemoveClipboardFormatListener(IntPtr hwnd);
 
         enum GetWindow_Cmd : uint
         {
@@ -110,14 +115,14 @@ namespace NonaClip
         {
             this.Visible = false;
             // Load parameters.
-            load_param_file();
+            LoadParamFile();
             // Load text buffer
-            load_text_buffer();
+            LoadTextBuffer();
             // Regist Hot keys.
-            hotkey_regist_all();
+            HotkeyRegisterAll();
             // Show graphical frame
             string file_path = resource_path + prms.background_file;
-            show_graphics(file_path);
+            ShowGraphics(file_path);
             labels = new Label[] { label1, label2, label3, label4, label5, label6, label7, label8, label9 };
             foreach (Label label in  labels )
             {
@@ -125,13 +130,16 @@ namespace NonaClip
             }
             Location = new Point(Screen.PrimaryScreen.Bounds.Width - this.Width,0);
             RefreshLabel();
+            // start Clipboard watch 
+            AddClipboardFormatListener(Handle);
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
+            RemoveClipboardFormatListener(Handle);
             notifyIcon1.Visible = false;
-            hotkey_unregist_all();
-            save_text_buffer();
+            HotkeyUnregisterAll();
+            SaveTextBuffer();
         }
 
         protected override void WndProc(ref Message m)
@@ -144,17 +152,13 @@ namespace NonaClip
                 {
                     if ((int)m.WParam == prms.hotkey_ids[i])
                     {
-                        send_paste(i);
+                        SendPaste(i);
                     }
-                }
-                if ((int)m.WParam == prms.hotkey_copy)
-                {
-                    send_copy();
                 }
                 if ((int)m.WParam == prms.hotkey_show)
                 {
                     if (this.Visible)
-                    { 
+                    {
                         this.Visible = false;
                         this.TopMost = false;
                     }
@@ -165,9 +169,13 @@ namespace NonaClip
                     }
                 }
             }
+            else if (m.Msg == WM_CLIPBOARDUPDATE)
+            {
+                OnClipboardUpdate();
+            }
         }
 
-        private void load_param_file()
+        private void LoadParamFile()
         {
             string file = conf_file;
             if (System.IO.File.Exists(file))
@@ -193,7 +201,7 @@ namespace NonaClip
             }
         }
 
-        public void save_param_file()
+        public void SaveParamFile()
         {
             string file = conf_file;
             try
@@ -209,7 +217,7 @@ namespace NonaClip
             }
         }
 
-        private void load_text_buffer()
+        private void LoadTextBuffer()
         {
             if(prms.text_record == false)
             {
@@ -236,7 +244,7 @@ namespace NonaClip
             }
         }
 
-        private void save_text_buffer()
+        private void SaveTextBuffer()
         {
             if (prms.text_record == false)
             {
@@ -256,10 +264,10 @@ namespace NonaClip
             }
         }
 
-        public void reload_graphics()
+        public void ReloadGraphics()
         {
             string file_path = resource_path + prms.background_file;
-            show_graphics(file_path);
+            ShowGraphics(file_path);
             if (this.Visible)
             {
                 this.TopMost = prms.top_most;
@@ -267,9 +275,8 @@ namespace NonaClip
             RefreshLabel();
         }
 
-        public void hotkey_regist_all()
+        public void HotkeyRegisterAll()
         {
-            RegisterHotKey(Handle, prms.hotkey_copy, prms.mod_type, prms.copy_key);
             RegisterHotKey(Handle, prms.hotkey_show, prms.mod_type, prms.show_key);
             for(int i=0; i<9; i++)
             {
@@ -277,9 +284,8 @@ namespace NonaClip
             }
         }
 
-        public void hotkey_unregist_all()
+        public void HotkeyUnregisterAll()
         {
-            UnregisterHotKey(Handle, prms.hotkey_copy);
             UnregisterHotKey(Handle, prms.hotkey_show);
             for (int i = 0; i < 9; i++)
             {
@@ -287,21 +293,34 @@ namespace NonaClip
             }
         }
 
-        private void send_paste(int n)
+        private void SendPaste(int n)
         {
             string text = txbuf.buffers[n];
             if (text != "")
             {
+                RemoveClipboardFormatListener(Handle);
                 Clipboard.SetText(text);
-                if ((Control.ModifierKeys & (Keys.Control | Keys.Alt)) != 0x0000)
+                if(prms.sendkey_type == SettingParams.TYPE_INS)
                 {
-                    SendKeys.SendWait("^+%{A 0}");
+                    if ((Control.ModifierKeys & (Keys.Control | Keys.Alt)) != 0x0000)
+                    {
+                        SendKeys.SendWait("^+%{A 0}");
+                    }
+                    SendKeys.SendWait("+{INSERT}");
                 }
-                SendKeys.SendWait("+{INSERT}");
+                else if(prms.sendkey_type == SettingParams.TYPE_V)
+                {
+                    if ((Control.ModifierKeys & (Keys.Shift | Keys.Alt)) != 0x0000)
+                    {
+                        SendKeys.SendWait("^+%{A 0}");
+                    }
+                    SendKeys.SendWait("^v");
+                }
+                AddClipboardFormatListener(Handle);
             }
         }
 
-        private void send_copy()
+        private void SendCopy()
         {
             if((Control.ModifierKeys & (Keys.Shift | Keys.Alt)) != 0x0000)
             {
@@ -309,6 +328,12 @@ namespace NonaClip
             }
             SendKeys.SendWait("^{INSERT}");
             System.Threading.Thread.Sleep(50);
+            SetText();
+            RefreshLabel();
+        }
+
+        private void OnClipboardUpdate()
+        {
             SetText();
             RefreshLabel();
         }
@@ -356,19 +381,19 @@ namespace NonaClip
         {
             if(dialog.Visible == false)
             {
-                dialog.attach_object(this, prms);
-                dialog.set_params();
-                dialog.make_file_list(resource_path);
+                dialog.AttachObject(this, prms);
+                dialog.SetParam();
+                dialog.MakeFileList(resource_path);
                 dialog.ShowDialog();
             }
         }
 
-        private void show_graphics(string path)
+        private void ShowGraphics(string path)
         {
             //フォームの境界線をなくす
             this.FormBorderStyle = FormBorderStyle.None;
             //フォームのサイズ変更
-            size_change(path);
+            SizeChange(path);
             //背景画像を指定する
             Bitmap img = new Bitmap(path);
             img.MakeTransparent();
@@ -378,7 +403,7 @@ namespace NonaClip
         }
 
         //ウィンドウの大きさを画像の大きさに変更
-        private void size_change(string path)
+        private void SizeChange(string path)
         {
             //元画像の縦横サイズを調べる
             System.Drawing.Bitmap bmpSrc = new System.Drawing.Bitmap(@path);
