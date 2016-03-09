@@ -41,7 +41,7 @@ namespace NonaClip
             invisible_first = false;
             text_record = true;
             record_file = "record.xml";
-            background_file = "wafuu2_cat.png";
+            background_file = "default.png";
             show_key = (int)Keys.D0;
             sendkey_type = TYPE_INS;
         }

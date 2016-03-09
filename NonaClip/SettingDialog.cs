@@ -25,7 +25,7 @@ namespace NonaClip
 
         private Form1 parent_form;
         private SettingParams prms;
-        private Keys key_code2 = Keys.D0;
+        private Keys key_code = Keys.D0;
         private Hashtable mod_table = new Hashtable();
 
         public SettingDialog()
@@ -50,8 +50,8 @@ namespace NonaClip
 
         public void SetParam()
         {
-            key_code2 = (Keys)prms.show_key;
-            textBox2.Text = key_code2.ToString();
+            key_code = (Keys)prms.show_key;
+            textBox2.Text = key_code.ToString();
             comboBox1.Text = (string)mod_table[prms.mod_type];
             if(prms.keyset[0] == prms.keyset_n[0])
             {
@@ -88,12 +88,12 @@ namespace NonaClip
 
         private bool CheckConflict()
         {
-            if (key_code2 == Keys.Insert && radioButton1.Checked)
+            if (key_code == Keys.Insert && radioButton1.Checked)
             {
                 MessageBox.Show("KEY: Insert is not permitted");
                 return false;                 
             }
-            if (key_code2 == Keys.V && radioButton2.Checked)
+            if (key_code == Keys.V && radioButton2.Checked)
             {
                 MessageBox.Show("KEY: V is not permitted");
                 return false;
@@ -102,7 +102,7 @@ namespace NonaClip
             {
                 foreach(int k in prms.keyset_n)
                 {
-                    if((int)key_code2 == k)
+                    if((int)key_code == k)
                     {
                         MessageBox.Show("Hotkeys conflict");
                         return false;
@@ -113,7 +113,7 @@ namespace NonaClip
             {
                 foreach (int k in prms.keyset_d)
                 {
-                    if ((int)key_code2 == k)
+                    if ((int)key_code == k)
                     {
                         MessageBox.Show("Hotkeys conflict");
                         return false;
@@ -125,7 +125,7 @@ namespace NonaClip
 
         private void AcceptChange()
         {
-            prms.show_key = (int)key_code2;
+            prms.show_key = (int)key_code;
             foreach(int i in mod_table.Keys)
             {
                 if(comboBox1.Text == (string)mod_table[i])
@@ -185,7 +185,7 @@ namespace NonaClip
         private void textBox2_KeyDown(object sender, KeyEventArgs e)
         {
             TextBox var = (TextBox)sender;
-            key_code2 = e.KeyCode;
+            key_code = e.KeyCode;
             var.Text = e.KeyCode.ToString();
         }
 
@@ -193,7 +193,7 @@ namespace NonaClip
         {
             TextBox var = (TextBox)sender;
             if (var.Text == "=Press any key=")
-                var.Text = key_code2.ToString();
+                var.Text = key_code.ToString();
         }
 
         private void button_default_Click(object sender, EventArgs e)

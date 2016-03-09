@@ -391,15 +391,25 @@ namespace NonaClip
         private void ShowGraphics(string path)
         {
             //フォームの境界線をなくす
-            this.FormBorderStyle = FormBorderStyle.None;
-            //フォームのサイズ変更
-            SizeChange(path);
-            //背景画像を指定する
-            Bitmap img = new Bitmap(path);
-            img.MakeTransparent();
-            this.BackgroundImage = img;// Image.FromFile(path);
-            //黒色の部分を透明化する
-            this.TransparencyKey = this.BackColor; // Color.White;
+            FormBorderStyle = FormBorderStyle.None;
+            if (System.IO.File.Exists(path))
+            {
+                try
+                {
+                    //フォームのサイズ変更
+                    SizeChange(path);
+                    //背景画像を指定する
+                    Bitmap img = new Bitmap(path);
+                    img.MakeTransparent();
+                    this.BackgroundImage = img;
+                    //背景を透明に
+                    this.TransparencyKey = this.BackColor;
+                }
+                catch
+                {
+                    ;
+                }
+            }
         }
 
         //ウィンドウの大きさを画像の大きさに変更
