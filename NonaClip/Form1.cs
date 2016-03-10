@@ -24,6 +24,7 @@ namespace NonaClip
         private const string conf_file = @"nonaclip_settings.xml";
         private Point lastMousePosition;
         private bool mouseCapture;
+        private string lastClipboardText = "";
         private TextBuffer txbuf;
         private SettingParams prms;
         private Label[] labels;
@@ -316,6 +317,10 @@ namespace NonaClip
                     }
                     SendKeys.SendWait("^v");
                 }
+                if(prms.ignore_unchanged && Clipboard.ContainsText())
+                {
+                    lastClipboardText = Clipboard.GetText();
+                }
                 AddClipboardFormatListener(Handle);
             }
         }
@@ -343,8 +348,11 @@ namespace NonaClip
             if (Clipboard.ContainsText())
             {
                 string str = Clipboard.GetText();
+                if (prms.ignore_unchanged && lastClipboardText == str)
+                    return;
                 if (TextBuffer.isLegal(str))
                 {
+                    lastClipboardText = str;
                     txbuf.push_text(str);
                 }
             }

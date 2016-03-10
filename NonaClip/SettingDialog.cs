@@ -72,6 +72,7 @@ namespace NonaClip
             checkBox1.Checked = prms.top_most;
             checkBox2.Checked = prms.text_record;
             checkBox3.Checked = prms.invisible_first;
+            checkBox4.Checked = prms.ignore_unchanged;
         }
 
         public void MakeFileList(string path)
@@ -154,6 +155,7 @@ namespace NonaClip
             prms.top_most = checkBox1.Checked;
             prms.text_record = checkBox2.Checked;
             prms.invisible_first = checkBox3.Checked;
+            prms.ignore_unchanged = checkBox4.Checked;
             prms.background_file = listBox1.Text;
         }
 

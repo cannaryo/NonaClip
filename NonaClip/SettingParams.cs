@@ -29,6 +29,7 @@ namespace NonaClip
         public bool top_most;
         public bool invisible_first;
         public bool text_record;
+        public bool ignore_unchanged;
         public string record_file;
         public string background_file;
         public int sendkey_type;
@@ -40,6 +41,7 @@ namespace NonaClip
             top_most = true;
             invisible_first = false;
             text_record = true;
+            ignore_unchanged = true;
             record_file = "record.xml";
             background_file = "default.png";
             show_key = (int)Keys.D0;
